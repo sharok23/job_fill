@@ -39,6 +39,7 @@
     currentSalary: "400000",
     expectedSalary: "1000000",
     noticePeriod: "15 days",
+    noticePeriodDays: "15",
     availability: "Immediately",
     willingToRelocate: "Yes",
     highestQualification: "Bachelor of Technology",
@@ -98,9 +99,10 @@
     jobStartYear: ["joining year", "start year", "from year"],
     totalExperience: ["total experience", "overall experience", "work experience"],
     experienceYears: ["years of experience", "experience years", "relevant experience"],
-    currentSalary: ["current salary", "current ctc"],
-    expectedSalary: ["expected salary", "expected ctc", "desired salary"],
+    currentSalary: ["current salary", "current ctc", "ctc"],
+    expectedSalary: ["expected salary", "expected ctc", "desired salary", "ectc", "expected ctc"],
     noticePeriod: ["notice period"],
+    noticePeriodDays: ["notice period in days", "notice in days", "notice days"],
     availability: ["availability", "start date", "available"],
     willingToRelocate: ["relocate", "relocation"],
     highestQualification: ["highest qualification", "degree", "education"],
@@ -163,6 +165,40 @@
     }
   };
 
+  const shortText = element => {
+    const text = element?.innerText || element?.textContent || element?.getAttribute?.("aria-label") || "";
+    return text.trim().length <= 140 ? text : "";
+  };
+
+  const addNearbyText = (element, parts) => {
+    const labelledBy = element.getAttribute("aria-labelledby");
+    if (labelledBy) {
+      labelledBy.split(/\s+/).forEach(id => {
+        const label = document.getElementById(id);
+        if (label) parts.push(shortText(label));
+      });
+    }
+
+    let node = element;
+    for (let depth = 0; node && depth < 5; depth += 1, node = node.parentElement) {
+      parts.push(node.getAttribute?.("aria-label"));
+
+      const directLabels = Array.from(node.children || []).filter(child => {
+        if (child === element || child.contains(element)) return false;
+        if (child.matches?.("input, textarea, select, button, [role='button']")) return false;
+        if (child.querySelector?.("input, textarea, select")) return false;
+        return shortText(child);
+      });
+      directLabels.slice(0, 4).forEach(child => parts.push(shortText(child)));
+
+      let previous = node.previousElementSibling;
+      for (let count = 0; previous && count < 2; count += 1, previous = previous.previousElementSibling) {
+        if (previous.querySelector?.("input, textarea, select")) continue;
+        parts.push(shortText(previous));
+      }
+    }
+  };
+
   const textFor = element => {
     const parts = [
       element.name,
@@ -182,6 +218,8 @@
 
     const parentLabel = element.closest("label");
     if (parentLabel) parts.push(parentLabel.innerText);
+
+    addNearbyText(element, parts);
 
     const container = element.closest("div, section, fieldset, li");
     if (container) {
@@ -356,7 +394,7 @@
     return true;
   };
 
-  const run = async () => {
+  const fillAll = async () => {
     let count = 0;
 
     document.querySelectorAll("input, textarea").forEach(element => {
@@ -390,7 +428,19 @@
       if (await setCustomDropdown(element)) count += 1;
     }
 
-    alert(`Job Autofill filled ${count} field${count === 1 ? "" : "s"}. Please review before submitting.`);
+    return count;
+  };
+
+  const run = async () => {
+    const delays = [0, 600, 1500, 3000, 5000];
+    let total = 0;
+
+    for (const delay of delays) {
+      if (delay) await sleep(delay);
+      total += await fillAll();
+    }
+
+    alert(`Job Autofill finished. Please review before submitting.`);
   };
 
   run();

@@ -31,6 +31,7 @@
   "currentSalary": "400000",
   "expectedSalary": "1000000",
   "noticePeriod": "15 days",
+  "noticePeriodDays": "15",
   "availability": "Immediately",
   "willingToRelocate": "Yes",
 
