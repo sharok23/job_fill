@@ -152,6 +152,9 @@
   };
 
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+  let isFilling = false;
+  let observer = null;
+  let observerTimer = 0;
 
   const setNativeValue = (element, value) => {
     const prototype = element instanceof HTMLTextAreaElement
@@ -320,6 +323,7 @@
       return true;
     }
     if (!value) return false;
+    if (norm(element.value) === norm(value)) return false;
     element.focus();
     setNativeValue(element, value);
     trigger(element);
@@ -336,6 +340,7 @@
         norm(item.value) === normalizedWanted;
     });
     if (!option) return false;
+    if (element.value === option.value) return false;
     element.value = option.value;
     trigger(element);
     return true;
@@ -374,6 +379,7 @@
   const setCustomDropdown = async element => {
     const wanted = valueFor(textFor(element));
     if (!wanted || element.disabled || element.getAttribute("aria-disabled") === "true") return false;
+    if (element.dataset.jobAutofillValue === wanted || optionMatches(element, wanted)) return false;
 
     element.focus();
     element.click();
@@ -388,6 +394,7 @@
 
     option.focus();
     option.click();
+    element.dataset.jobAutofillValue = wanted;
     trigger(option);
     trigger(element);
     return true;
@@ -399,11 +406,13 @@
     const optionText = norm([element.value, element.closest("label")?.innerText].filter(Boolean).join(" "));
     if (!wanted || !optionText) return false;
     if (element.type === "checkbox" && ["yes", "true", "y"].includes(norm(wanted))) {
+      if (element.checked) return false;
       element.checked = true;
       trigger(element);
       return true;
     }
     if (!optionText.includes(norm(wanted)) && !norm(wanted).includes(optionText)) return false;
+    if (element.checked) return false;
     element.checked = true;
     trigger(element);
     return true;
@@ -412,44 +421,59 @@
   const setEditable = element => {
     const value = valueFor(textFor(element));
     if (!value || element.getAttribute("aria-disabled") === "true") return false;
+    if (norm(element.textContent) === norm(value)) return false;
     element.focus();
     element.textContent = value;
     trigger(element);
     return true;
   };
 
-  const fillAll = async () => {
+  const observeChanges = () => {
+    if (observer) observer.observe(document.documentElement, { childList: true, subtree: true });
+  };
+
+  const fillAll = async ({ includeCustomDropdowns = true } = {}) => {
+    if (isFilling) return 0;
+    isFilling = true;
+    if (observer) observer.disconnect();
     let count = 0;
 
-    document.querySelectorAll("input, textarea").forEach(element => {
-      if (element.type === "radio" || element.type === "checkbox") {
-        if (setChoice(element)) count += 1;
-        return;
+    try {
+      document.querySelectorAll("input, textarea").forEach(element => {
+        if (element.type === "radio" || element.type === "checkbox") {
+          if (setChoice(element)) count += 1;
+          return;
+        }
+        if (setTextField(element)) count += 1;
+      });
+
+      document.querySelectorAll("select").forEach(element => {
+        if (setSelect(element)) count += 1;
+      });
+
+      document.querySelectorAll("[contenteditable='true']").forEach(element => {
+        if (setEditable(element)) count += 1;
+      });
+
+      if (includeCustomDropdowns) {
+        const customDropdowns = Array.from(document.querySelectorAll([
+          "[role='combobox']",
+          "[aria-haspopup='listbox']",
+          "[aria-haspopup='menu']",
+          "button[aria-expanded]",
+          "div[aria-expanded]"
+        ].join(","))).filter(element => {
+          const tag = element.tagName.toLowerCase();
+          return tag !== "select" && element.offsetParent !== null;
+        });
+
+        for (const element of customDropdowns) {
+          if (await setCustomDropdown(element)) count += 1;
+        }
       }
-      if (setTextField(element)) count += 1;
-    });
-
-    document.querySelectorAll("select").forEach(element => {
-      if (setSelect(element)) count += 1;
-    });
-
-    document.querySelectorAll("[contenteditable='true']").forEach(element => {
-      if (setEditable(element)) count += 1;
-    });
-
-    const customDropdowns = Array.from(document.querySelectorAll([
-      "[role='combobox']",
-      "[aria-haspopup='listbox']",
-      "[aria-haspopup='menu']",
-      "button[aria-expanded]",
-      "div[aria-expanded]"
-    ].join(","))).filter(element => {
-      const tag = element.tagName.toLowerCase();
-      return tag !== "select" && element.offsetParent !== null;
-    });
-
-    for (const element of customDropdowns) {
-      if (await setCustomDropdown(element)) count += 1;
+    } finally {
+      isFilling = false;
+      observeChanges();
     }
 
     return count;
@@ -459,16 +483,16 @@
     const delays = [0, 600, 1500, 3000, 5000];
     let total = 0;
 
-    for (const delay of delays) {
+    for (const [index, delay] of delays.entries()) {
       if (delay) await sleep(delay);
-      total += await fillAll();
+      total += await fillAll({ includeCustomDropdowns: index === 0 });
     }
 
     alert(`Job Autofill finished. Please review before submitting.`);
   };
 
-  let observerTimer = 0;
-  const observer = new MutationObserver(mutations => {
+  observer = new MutationObserver(mutations => {
+    if (isFilling) return;
     const hasNewFields = mutations.some(mutation => {
       return Array.from(mutation.addedNodes).some(node => {
         return node.nodeType === Node.ELEMENT_NODE &&
@@ -480,11 +504,11 @@
     if (!hasNewFields) return;
     clearTimeout(observerTimer);
     observerTimer = setTimeout(() => {
-      fillAll();
+      fillAll({ includeCustomDropdowns: false });
     }, 700);
   });
 
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  observeChanges();
 
   run();
 })();
