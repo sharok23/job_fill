@@ -56,7 +56,7 @@
     courseEndMonth: "August",
     courseEndYear: "2021",
     graduationYear: "2021",
-    skills: "Java, Spring Boot, PostgreSQL, Kafka, Docker, REST APIs, AWS S3, OpenSearch, DynamoDB, Maven, Git, JUnit, Mockito",
+    skills: "Java, Spring Boot, PostgreSQL, Kafka, Docker, REST APIs, AWS S3, Maven, Git, JUnit, Mockito",
     languages: "English, Tamil, Malayalam",
     resumeUrl: "https://drive.google.com/file/d/1MnF02rdTdUMRNFdN4LwVlVBApvljbPwO/view?usp=drive_link",
     coverLetterUrl: "https://drive.google.com/file/d/19pE4uwIC9LneyUBCI5j0YkSdiuvWn26N/view?usp=drive_link",
@@ -221,13 +221,28 @@
 
     addNearbyText(element, parts);
 
-    const container = element.closest("div, section, fieldset, li");
-    if (container) {
-      const localLabel = container.querySelector("label, legend, h2, h3, [aria-label]");
-      if (localLabel) parts.push(localLabel.innerText || localLabel.getAttribute("aria-label"));
-    }
-
     return norm(parts.filter(Boolean).join(" "));
+  };
+
+  const directValueFor = element => {
+    const text = textFor(element);
+    const type = (element.type || "").toLowerCase();
+
+    if (type === "email") return profile.email;
+    if (/\bmiddle name\b|\bmiddlename\b/.test(text)) return "";
+    if (/\bfirst name\b|\bfirstname\b|\bgiven name\b/.test(text)) return profile.firstName;
+    if (/\blast name\b|\blastname\b|\bsurname\b|\bfamily name\b/.test(text)) return profile.lastName;
+    if (/\bemail\b|\be mail\b/.test(text)) return profile.email;
+    if (/\bmobile phone\b|\bmobile number\b|\bmobile\b|\bphone\b|\btelephone\b/.test(text)) return profile.phone;
+    if (/\blinkedin\b|\blinked in\b/.test(text)) return profile.linkedin;
+    if (/\bcurrent location\b/.test(text)) return profile.currentLocation;
+    if (/\bcompany name\b|\bcurrent company\b|\bemployer\b/.test(text)) return profile.currentCompany;
+    if (/\bjob title\b|\bdesignation\b|\bposition title\b/.test(text)) return profile.currentJobTitle;
+    if (/\bdate of joining\b|\bjoining date\b/.test(text)) return profile.jobStartDate;
+    if (/\bnotice period in days\b|\bnotice days\b/.test(text)) return profile.noticePeriodDays;
+    if (/\bectc\b|\bexpected ctc\b/.test(text)) return profile.expectedSalary;
+    if (/\bctc\b|\bcurrent ctc\b/.test(text)) return profile.currentSalary;
+    return null;
   };
 
   const valueFor = text => {
@@ -277,7 +292,8 @@
 
   const inputValueFor = element => {
     const text = textFor(element);
-    const value = valueFor(text);
+    const directValue = directValueFor(element);
+    const value = directValue !== null ? directValue : valueFor(text);
     if (!value) return "";
     if (element.type === "date") return dateForInput(value);
     if (element.type === "month") {
@@ -294,8 +310,16 @@
 
   const setTextField = element => {
     const value = inputValueFor(element);
-    if (!value || element.disabled || element.readOnly) return false;
     if (element.type === "file" || element.type === "hidden" || element.type === "password") return false;
+    if (element.disabled || element.readOnly) return false;
+    if (!value && /\bmiddle name\b|\bmiddlename\b/.test(textFor(element))) {
+      if (!element.value) return false;
+      element.focus();
+      setNativeValue(element, "");
+      trigger(element);
+      return true;
+    }
+    if (!value) return false;
     element.focus();
     setNativeValue(element, value);
     trigger(element);
@@ -442,6 +466,25 @@
 
     alert(`Job Autofill finished. Please review before submitting.`);
   };
+
+  let observerTimer = 0;
+  const observer = new MutationObserver(mutations => {
+    const hasNewFields = mutations.some(mutation => {
+      return Array.from(mutation.addedNodes).some(node => {
+        return node.nodeType === Node.ELEMENT_NODE &&
+          (node.matches?.("input, textarea, select, [contenteditable='true'], [role='combobox']") ||
+            node.querySelector?.("input, textarea, select, [contenteditable='true'], [role='combobox']"));
+      });
+    });
+
+    if (!hasNewFields) return;
+    clearTimeout(observerTimer);
+    observerTimer = setTimeout(() => {
+      fillAll();
+    }, 700);
+  });
+
+  observer.observe(document.documentElement, { childList: true, subtree: true });
 
   run();
 })();
