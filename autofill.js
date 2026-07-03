@@ -29,6 +29,11 @@
     nationality: "Indian",
     currentJobTitle: "Software Engineer 1",
     currentCompany: "Edstem Technologies",
+    currentlyWorking: "Yes",
+    currentCompanyLocation: "Infopark Kochi",
+    jobStartDate: "06/02/2023",
+    jobStartMonth: "February",
+    jobStartYear: "2023",
     totalExperience: "3.5",
     experienceYears: "3.5",
     currentSalary: "400000",
@@ -37,8 +42,18 @@
     availability: "Immediately",
     willingToRelocate: "Yes",
     highestQualification: "Bachelor of Technology",
+    course: "Bachelor of Technology",
     fieldOfStudy: "Computer Science",
-    university: "Ilahia College of Engineering and Technology",
+    branch: "Computer Science",
+    college: "Ilahia College of Engineering and Technology",
+    university: "Kerala Technological University",
+    educationLocation: "Muvattupuzha, Ernakulam",
+    courseStartDate: "01/07/2017",
+    courseStartMonth: "July",
+    courseStartYear: "2017",
+    courseEndDate: "01/08/2021",
+    courseEndMonth: "August",
+    courseEndYear: "2021",
     graduationYear: "2021",
     skills: "Java, Spring Boot, PostgreSQL, Kafka, Docker, REST APIs, AWS S3, OpenSearch, DynamoDB, Maven, Git, JUnit, Mockito",
     languages: "English, Tamil, Malayalam",
@@ -74,8 +89,13 @@
     zip: ["zip", "postal", "pin code", "pincode"],
     country: ["country"],
     nationality: ["nationality"],
-    currentJobTitle: ["current title", "job title", "designation", "current role", "current position"],
-    currentCompany: ["current company", "employer", "organization", "current employer"],
+    currentJobTitle: ["current title", "job title", "designation", "current role", "current position", "position title"],
+    currentCompany: ["current company", "company name", "employer", "organization", "current employer", "company"],
+    currentlyWorking: ["currently working", "i currently work here", "present employer", "current employment", "till date", "present"],
+    currentCompanyLocation: ["company location", "work location", "job location", "office location", "employment location"],
+    jobStartDate: ["date of joining", "joining date", "start date", "employment start date", "job start date", "from date"],
+    jobStartMonth: ["joining month", "start month", "from month"],
+    jobStartYear: ["joining year", "start year", "from year"],
     totalExperience: ["total experience", "overall experience", "work experience"],
     experienceYears: ["years of experience", "experience years", "relevant experience"],
     currentSalary: ["current salary", "current ctc"],
@@ -84,9 +104,19 @@
     availability: ["availability", "start date", "available"],
     willingToRelocate: ["relocate", "relocation"],
     highestQualification: ["highest qualification", "degree", "education"],
+    course: ["course", "degree course", "qualification", "program", "programme"],
     fieldOfStudy: ["field of study", "major", "specialization"],
-    university: ["university", "college", "school"],
-    graduationYear: ["graduation year", "passing year"],
+    branch: ["branch", "stream", "department", "specialization"],
+    college: ["college", "institute", "institution", "school name", "college name"],
+    university: ["university", "affiliated university", "board"],
+    educationLocation: ["education location", "college location", "institute location", "campus location"],
+    courseStartDate: ["course start date", "education start date", "start course", "course from date", "education from date"],
+    courseStartMonth: ["course start month", "education start month", "from month"],
+    courseStartYear: ["course start year", "education start year", "from year"],
+    courseEndDate: ["course end date", "education end date", "ended", "end course", "course to date", "education to date"],
+    courseEndMonth: ["course end month", "education end month", "to month"],
+    courseEndYear: ["course end year", "education end year", "to year"],
+    graduationYear: ["graduation year", "passing year", "passed out year"],
     skills: ["skills", "technologies"],
     languages: ["languages"],
     resumeUrl: ["resume url", "cv url", "resume link", "cv link"],
@@ -180,8 +210,52 @@
     return bestScore ? String(best) : "";
   };
 
+  const dateForInput = value => {
+    const match = String(value || "").match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+    if (!match) return value;
+    const [, day, month, rawYear] = match;
+    const year = rawYear.length === 2 ? `20${rawYear}` : rawYear;
+    return `${year.padStart(4, "0")}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  };
+
+  const monthForInput = (year, monthName) => {
+    const months = {
+      january: "01",
+      february: "02",
+      march: "03",
+      april: "04",
+      may: "05",
+      june: "06",
+      july: "07",
+      august: "08",
+      september: "09",
+      october: "10",
+      november: "11",
+      december: "12"
+    };
+    const month = months[norm(monthName)];
+    return year && month ? `${year}-${month}` : "";
+  };
+
+  const inputValueFor = element => {
+    const text = textFor(element);
+    const value = valueFor(text);
+    if (!value) return "";
+    if (element.type === "date") return dateForInput(value);
+    if (element.type === "month") {
+      if (text.includes("job") || text.includes("joining") || text.includes("employment")) {
+        return monthForInput(profile.jobStartYear, profile.jobStartMonth);
+      }
+      if (text.includes("end") || text.includes("to")) {
+        return monthForInput(profile.courseEndYear, profile.courseEndMonth);
+      }
+      return monthForInput(profile.courseStartYear, profile.courseStartMonth);
+    }
+    return value;
+  };
+
   const setTextField = element => {
-    const value = valueFor(textFor(element));
+    const value = inputValueFor(element);
     if (!value || element.disabled || element.readOnly) return false;
     if (element.type === "file" || element.type === "hidden" || element.type === "password") return false;
     element.focus();
