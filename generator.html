@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Job Autofill Bookmarklet Generator</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #18202a;
+      --muted: #5d6875;
+      --border: #d7dde5;
+      --accent: #0b63ce;
+      --accent-strong: #084c9e;
+      --ok: #176b3a;
+      --bad: #a12727;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101419;
+        --panel: #171d24;
+        --text: #edf2f7;
+        --muted: #a8b3c0;
+        --border: #313b47;
+        --accent: #6ca8ff;
+        --accent-strong: #96c2ff;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.5;
+    }
+
+    main {
+      width: min(960px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    p {
+      margin: 0 0 20px;
+      color: var(--muted);
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 20px;
+    }
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+    }
+
+    .panel + .panel {
+      margin-top: 18px;
+    }
+
+    .steps {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--muted);
+    }
+
+    .steps li {
+      margin: 8px 0;
+    }
+
+    .note {
+      margin: 14px 0 0;
+      border-left: 3px solid var(--accent);
+      padding: 10px 12px;
+      background: rgba(11, 99, 206, 0.08);
+      color: var(--text);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 320px;
+      resize: vertical;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      font: 14px/1.45 Consolas, "Courier New", monospace;
+      color: var(--text);
+      background: transparent;
+    }
+
+    input[type="file"],
+    input[type="url"] {
+      display: block;
+      width: 100%;
+      margin: 0 0 16px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      color: var(--text);
+      background: transparent;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 14px;
+    }
+
+    button,
+    .bookmarklet {
+      min-height: 40px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      color: var(--text);
+      background: transparent;
+      font: inherit;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    button.primary:hover {
+      background: var(--accent-strong);
+    }
+
+    .bookmarklet {
+      display: inline-flex;
+      align-items: center;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .status {
+      min-height: 24px;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    .status.ok {
+      color: var(--ok);
+    }
+
+    .status.bad {
+      color: var(--bad);
+    }
+
+    .output {
+      margin-top: 18px;
+      display: none;
+    }
+
+    .output.is-visible {
+      display: block;
+    }
+
+    code {
+      display: block;
+      max-height: 160px;
+      overflow: auto;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      background: rgba(127, 127, 127, 0.08);
+      font: 12px/1.45 Consolas, "Courier New", monospace;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Job Autofill</h1>
+    <p>Build one bookmarklet from your profile and run it on job forms opened from LinkedIn, job boards, or company career pages.</p>
+
+    <section class="panel" aria-labelledby="profile-heading">
+      <h2 id="profile-heading">Profile JSON</h2>
+      <label for="profileFile">Load profile.json</label>
+      <input id="profileFile" type="file" accept="application/json,.json">
+
+      <label for="hostedScriptUrl">Hosted autofill.js URL for short mobile bookmark</label>
+      <input id="hostedScriptUrl" type="url" placeholder="https://your-username.github.io/job-autofill/autofill.js">
+
+      <label for="profileInput">Autofill profile</label>
+      <textarea id="profileInput" spellcheck="false">{
+  "firstName": "John",
+  "lastName": "Doe",
+  "fullName": "John Doe",
+  "email": "john.doe@example.com",
+  "phone": "+919999999999",
+  "altPhone": "",
+  "linkedin": "https://linkedin.com/in/your-profile",
+  "github": "https://github.com/your-username",
+  "portfolio": "",
+  "website": "",
+  "currentLocation": "Bengaluru, India",
+  "fullAddress": "123 Main Street, Bengaluru, Karnataka 560001",
+  "city": "Bengaluru",
+  "state": "Karnataka",
+  "zip": "560001",
+  "country": "India",
+  "nationality": "Indian",
+  "currentJobTitle": "Software Engineer",
+  "currentCompany": "Tech Corp",
+  "totalExperience": "5",
+  "experienceYears": "5",
+  "currentSalary": "800000",
+  "expectedSalary": "1200000",
+  "noticePeriod": "30 days",
+  "availability": "Immediately",
+  "willingToRelocate": "Yes",
+  "highestQualification": "Bachelor of Technology",
+  "fieldOfStudy": "Computer Science",
+  "university": "XYZ University",
+  "graduationYear": "2019",
+  "skills": "JavaScript, Python, React, Node.js, SQL, AWS",
+  "languages": "English, Hindi",
+  "resumeUrl": "",
+  "coverLetterUrl": "",
+  "coverLetter": "I am excited to apply for this opportunity. With my background and skills, I am confident I can contribute effectively to your team.",
+  "roleExplanation": "As a Software Engineer, I develop and maintain reliable applications, build APIs, improve performance, write tests, and collaborate with cross-functional teams to deliver production-ready software.",
+  "whyThisRole": "I am passionate about this role because it aligns with my skills and career goals.",
+  "whyThisCompany": "I admire your company's mission and innovative work in the industry.",
+  "strengths": "Problem-solving, quick learning, teamwork, and strong communication.",
+  "achievements": "Led a team to deliver a critical project ahead of schedule.",
+  "gender": "Male",
+  "dateOfBirth": "1995-01-01",
+  "visaStatus": "Authorized to work",
+  "source": "LinkedIn"
+}</textarea>
+
+      <div class="controls">
+        <button class="primary" type="button" id="buildButton">Build Bookmarklet</button>
+        <button type="button" id="copyButton" disabled>Copy Bookmarklet URL</button>
+        <a class="bookmarklet" id="bookmarkletLink" href="#">Job Autofill</a>
+      </div>
+
+      <div class="status" id="status" role="status"></div>
+
+      <div class="output" id="output">
+        <label for="bookmarkletCode">Bookmarklet URL</label>
+        <code id="bookmarkletCode"></code>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="mobile-heading">
+      <h2 id="mobile-heading">Use It On Mobile</h2>
+      <h3>Android Chrome</h3>
+      <ol class="steps">
+        <li>Upload `autofill.js` and paste its public URL into the hosted script URL field.</li>
+        <li>Build the bookmarklet and copy the short bookmarklet URL.</li>
+        <li>Create any bookmark, edit it, set the name to <strong>Job Autofill</strong>, and paste the copied URL into the URL field.</li>
+        <li>When a job form opens in browser, tap the address bar, type <strong>Job Autofill</strong>, then tap the bookmark suggestion.</li>
+      </ol>
+      <h3>iPhone Safari</h3>
+      <ol class="steps">
+        <li>Upload `autofill.js` and paste its public URL into the hosted script URL field.</li>
+        <li>Build the bookmarklet and copy the short bookmarklet URL.</li>
+        <li>Add this page as a bookmark, then edit that bookmark and replace its address with the copied URL.</li>
+        <li>Open the job form in Safari, open bookmarks, then tap <strong>Job Autofill</strong>.</li>
+      </ol>
+      <p class="note">LinkedIn app pages sometimes block injected scripts. If autofill does nothing, open the application page in Chrome or Safari and run the bookmarklet there.</p>
+    </section>
+  </main>
+
+  <script>
+    const fileInput = document.querySelector("#profileFile");
+    const hostedScriptUrlInput = document.querySelector("#hostedScriptUrl");
+    const input = document.querySelector("#profileInput");
+    const buildButton = document.querySelector("#buildButton");
+    const copyButton = document.querySelector("#copyButton");
+    const link = document.querySelector("#bookmarkletLink");
+    const status = document.querySelector("#status");
+    const output = document.querySelector("#output");
+    const code = document.querySelector("#bookmarkletCode");
+
+    const fieldMap = {
+      firstName: ["first name", "firstname", "given name", "first"],
+      lastName: ["last name", "lastname", "surname", "family name", "last"],
+      fullName: ["full name", "candidate name", "applicant name", "name"],
+      email: ["email", "e-mail", "email address"],
+      phone: ["phone", "mobile", "contact number", "telephone", "mobile number", "phone number"],
+      altPhone: ["alternate phone", "alternative phone"],
+      linkedin: ["linkedin", "linked in", "linkedin profile", "linkedin url"],
+      github: ["github", "git hub"],
+      portfolio: ["portfolio", "portfolio url"],
+      website: ["website", "personal site", "url"],
+      currentLocation: ["current location", "location"],
+      fullAddress: ["address", "street address", "current address"],
+      city: ["city"],
+      state: ["state", "province"],
+      zip: ["zip", "postal", "pin code", "pincode"],
+      country: ["country"],
+      nationality: ["nationality"],
+      currentJobTitle: ["current title", "job title", "designation", "current role", "current position"],
+      currentCompany: ["current company", "employer", "organization", "current employer"],
+      totalExperience: ["total experience", "overall experience", "work experience"],
+      experienceYears: ["years of experience", "experience years", "relevant experience"],
+      currentSalary: ["current salary", "current ctc"],
+      expectedSalary: ["expected salary", "expected ctc", "desired salary"],
+      noticePeriod: ["notice period"],
+      availability: ["availability", "start date", "available"],
+      willingToRelocate: ["relocate", "relocation"],
+      highestQualification: ["highest qualification", "degree", "education"],
+      fieldOfStudy: ["field of study", "major", "specialization"],
+      university: ["university", "college", "school"],
+      graduationYear: ["graduation year", "passing year"],
+      skills: ["skills", "technologies"],
+      languages: ["languages"],
+      resumeUrl: ["resume url", "cv url", "resume link", "cv link"],
+      coverLetterUrl: ["cover letter url", "cover letter link", "covering letter url", "covering letter link"],
+      coverLetter: ["cover letter", "covering letter", "message to hiring", "additional information", "application message"],
+      roleExplanation: ["explain about role", "explain your role", "describe your role", "current role description", "job responsibilities", "roles and responsibilities", "describe your responsibilities", "work experience summary", "professional summary", "profile summary", "summary about your experience", "about your experience", "about you"],
+      whyThisRole: ["why this role", "why are you interested", "why are you interested in this role", "why do you want this role"],
+      whyThisCompany: ["why this company"],
+      strengths: ["strengths"],
+      achievements: ["achievements", "accomplishments"],
+      gender: ["gender"],
+      dateOfBirth: ["date of birth", "dob", "birth date"],
+      visaStatus: ["visa", "work authorization", "authorized to work"],
+      source: ["source", "how did you hear"]
+    };
+
+    function bookmarkletSource(profile) {
+      return `(() => {
+        const profile = ${JSON.stringify(profile)};
+        const fieldMap = ${JSON.stringify(fieldMap)};
+        const norm = value => String(value || "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, " ")
+          .trim();
+        const escapeSelector = value => {
+          if (window.CSS && CSS.escape) return CSS.escape(value);
+          return String(value).replace(/["\\\\]/g, "\\\\$&");
+        };
+        const trigger = element => {
+          for (const type of ["input", "change", "blur"]) {
+            element.dispatchEvent(new Event(type, { bubbles: true }));
+          }
+        };
+        const setNativeValue = (element, value) => {
+          const prototype = element instanceof HTMLTextAreaElement
+            ? HTMLTextAreaElement.prototype
+            : HTMLInputElement.prototype;
+          const descriptor = Object.getOwnPropertyDescriptor(prototype, "value");
+          if (descriptor && descriptor.set) {
+            descriptor.set.call(element, value);
+          } else {
+            element.value = value;
+          }
+        };
+        const textFor = element => {
+          const parts = [
+            element.name,
+            element.id,
+            element.placeholder,
+            element.getAttribute("aria-label"),
+            element.getAttribute("data-test"),
+            element.getAttribute("data-testid")
+          ];
+          if (element.id) {
+            const label = document.querySelector(\`label[for="\${escapeSelector(element.id)}"]\`);
+            if (label) parts.push(label.innerText);
+          }
+          const parentLabel = element.closest("label");
+          if (parentLabel) parts.push(parentLabel.innerText);
+          const container = element.closest("div, section, fieldset, li");
+          if (container) {
+            const localLabel = container.querySelector("label, legend, h2, h3, [aria-label]");
+            if (localLabel) parts.push(localLabel.innerText || localLabel.getAttribute("aria-label"));
+          }
+          return norm(parts.filter(Boolean).join(" "));
+        };
+        const valueFor = text => {
+          let best = null;
+          let bestScore = 0;
+          for (const [key, aliases] of Object.entries(fieldMap)) {
+            if (!profile[key]) continue;
+            for (const alias of aliases) {
+              const cleanAlias = norm(alias);
+              if (!cleanAlias) continue;
+              const score = text === cleanAlias ? 100 : text.includes(cleanAlias) ? cleanAlias.length : 0;
+              if (score > bestScore) {
+                best = profile[key];
+                bestScore = score;
+              }
+            }
+          }
+          return bestScore ? String(best) : "";
+        };
+        const setTextField = element => {
+          const text = textFor(element);
+          const value = valueFor(text);
+          if (!value || element.disabled || element.readOnly) return false;
+          if (element.type === "file" || element.type === "hidden" || element.type === "password") return false;
+          element.focus();
+          setNativeValue(element, value);
+          trigger(element);
+          return true;
+        };
+        const setEditable = element => {
+          const text = textFor(element);
+          const value = valueFor(text);
+          if (!value || element.getAttribute("aria-disabled") === "true") return false;
+          element.focus();
+          element.textContent = value;
+          trigger(element);
+          return true;
+        };
+        const setSelect = element => {
+          const wanted = valueFor(textFor(element));
+          if (!wanted || element.disabled) return false;
+          const normalizedWanted = norm(wanted);
+          const option = Array.from(element.options).find(item => {
+            return norm(item.text).includes(normalizedWanted) || normalizedWanted.includes(norm(item.text)) || norm(item.value) === normalizedWanted;
+          });
+          if (!option) return false;
+          element.value = option.value;
+          trigger(element);
+          return true;
+        };
+        const setChoice = element => {
+          if (element.disabled) return false;
+          const text = textFor(element);
+          const wanted = valueFor(text);
+          const optionText = norm([element.value, element.closest("label")?.innerText].filter(Boolean).join(" "));
+          if (!wanted || !optionText) return false;
+          if (!optionText.includes(norm(wanted)) && !norm(wanted).includes(optionText)) return false;
+          element.checked = true;
+          trigger(element);
+          return true;
+        };
+        let count = 0;
+        document.querySelectorAll("input, textarea").forEach(element => {
+          if (element.type === "radio" || element.type === "checkbox") {
+            if (setChoice(element)) count += 1;
+            return;
+          }
+          if (setTextField(element)) count += 1;
+        });
+        document.querySelectorAll("select").forEach(element => {
+          if (setSelect(element)) count += 1;
+        });
+        document.querySelectorAll("[contenteditable='true']").forEach(element => {
+          if (setEditable(element)) count += 1;
+        });
+        alert(\`Job Autofill filled \${count} field\${count === 1 ? "" : "s"}.\`);
+      })();`;
+    }
+
+    function shortBookmarkletSource(scriptUrl) {
+      return `(() => {
+        const existing = document.querySelector("script[data-job-autofill]");
+        if (existing) existing.remove();
+        const script = document.createElement("script");
+        script.src = ${JSON.stringify(scriptUrl)} + "?v=" + Date.now();
+        script.async = true;
+        script.dataset.jobAutofill = "true";
+        document.documentElement.appendChild(script);
+      })();`;
+    }
+
+    function setStatus(message, type) {
+      status.textContent = message;
+      status.className = `status ${type || ""}`.trim();
+    }
+
+    function build() {
+      try {
+        const profile = JSON.parse(input.value);
+        delete profile.___instructions___;
+        const hostedScriptUrl = hostedScriptUrlInput.value.trim();
+        const source = hostedScriptUrl ? shortBookmarkletSource(hostedScriptUrl) : bookmarkletSource(profile);
+        const href = `javascript:${encodeURIComponent(source)}`;
+        link.href = href;
+        code.textContent = href;
+        output.classList.add("is-visible");
+        copyButton.disabled = false;
+        const mode = hostedScriptUrl ? "Short mobile bookmarklet built." : "Standalone bookmarklet built.";
+        const lengthWarning = !hostedScriptUrl && href.length > 14000 ? " It is large because your profile has long text; use hosted autofill.js for mobile." : "";
+        setStatus(`${mode} Copy the URL and paste it into a bookmark.${lengthWarning}`, "ok");
+      } catch (error) {
+        copyButton.disabled = true;
+        output.classList.remove("is-visible");
+        setStatus(`Invalid JSON: ${error.message}`, "bad");
+      }
+    }
+
+    buildButton.addEventListener("click", build);
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      input.value = await file.text();
+      build();
+    });
+
+    copyButton.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(link.href);
+        setStatus("Bookmarklet URL copied.", "ok");
+      } catch (error) {
+        setStatus("Copy failed. Select the URL text and copy it manually.", "bad");
+      }
+    });
+
+    fetch("profile.json", { cache: "no-store" })
+      .then(response => response.ok ? response.text() : "")
+      .then(text => {
+        if (text) input.value = text;
+        build();
+      })
+      .catch(build);
+  </script>
+</body>
+</html>

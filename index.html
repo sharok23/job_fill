@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Job Autofill Mobile Setup</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f7f8fa;
+      --card: #ffffff;
+      --text: #17202a;
+      --muted: #5d6875;
+      --border: #d6dce5;
+      --accent: #0b63ce;
+      --accent-dark: #084c9e;
+      --ok: #176b3a;
+      --bad: #a12727;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101419;
+        --card: #171d24;
+        --text: #edf2f7;
+        --muted: #a8b3c0;
+        --border: #313b47;
+        --accent: #6ca8ff;
+        --accent-dark: #96c2ff;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.5;
+    }
+
+    main {
+      width: min(720px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 28px 0;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 20px;
+    }
+
+    p {
+      margin: 0 0 16px;
+      color: var(--muted);
+    }
+
+    .panel {
+      margin-top: 16px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+    }
+
+    button {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: #ffffff;
+      font: inherit;
+      font-weight: 700;
+    }
+
+    button:hover {
+      background: var(--accent-dark);
+    }
+
+    ol {
+      margin: 0;
+      padding-left: 22px;
+      color: var(--muted);
+    }
+
+    li {
+      margin: 8px 0;
+    }
+
+    code {
+      display: block;
+      max-height: 150px;
+      overflow: auto;
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      background: rgba(127, 127, 127, 0.08);
+      font: 12px/1.45 Consolas, "Courier New", monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .status {
+      min-height: 24px;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    .ok {
+      color: var(--ok);
+    }
+
+    .bad {
+      color: var(--bad);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Job Autofill</h1>
+    <p>One bookmark for filling repeated job application forms on mobile.</p>
+
+    <section class="panel">
+      <h2>Setup On Mobile</h2>
+      <button type="button" id="copyButton">Copy Job Autofill Bookmark URL</button>
+      <div id="status" class="status" role="status"></div>
+      <code id="bookmarkletCode"></code>
+    </section>
+
+    <section class="panel">
+      <h2>What To Do</h2>
+      <ol>
+        <li>Upload this folder to GitHub Pages.</li>
+        <li>Open this page on your phone.</li>
+        <li>Tap the copy button above.</li>
+        <li>Create any browser bookmark named <strong>Job Autofill</strong>.</li>
+        <li>Edit that bookmark and replace its URL with the copied text.</li>
+        <li>Open a job form, type <strong>Job Autofill</strong> in the address bar, and tap the bookmark.</li>
+      </ol>
+    </section>
+
+    <section class="panel">
+      <h2>Important</h2>
+      <p>This uses <code id="scriptUrlText"></code></p>
+      <p>If this folder is public on GitHub, your details inside <strong>autofill.js</strong> are public too.</p>
+      <p>Resume and cover letter file upload buttons still need manual upload because browsers block scripts from choosing files.</p>
+    </section>
+  </main>
+
+  <script>
+    const copyButton = document.querySelector("#copyButton");
+    const status = document.querySelector("#status");
+    const code = document.querySelector("#bookmarkletCode");
+    const scriptUrlText = document.querySelector("#scriptUrlText");
+
+    const scriptUrl = new URL("autofill.js", window.location.href).href;
+    const source = `(() => {
+      const existing = document.querySelector("script[data-job-autofill]");
+      if (existing) existing.remove();
+      const script = document.createElement("script");
+      script.src = ${JSON.stringify(scriptUrl)} + "?v=" + Date.now();
+      script.async = true;
+      script.dataset.jobAutofill = "true";
+      document.documentElement.appendChild(script);
+    })();`;
+    const bookmarkletUrl = `javascript:${encodeURIComponent(source)}`;
+
+    code.textContent = bookmarkletUrl;
+    scriptUrlText.textContent = scriptUrl;
+
+    if (window.location.protocol === "file:") {
+      status.textContent = "Open this page from GitHub Pages before copying. Local file URLs will not work on job sites.";
+      status.className = "status bad";
+    }
+
+    copyButton.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(bookmarkletUrl);
+        status.textContent = "Copied. Now paste it into a browser bookmark URL.";
+        status.className = "status ok";
+      } catch (error) {
+        status.textContent = "Copy failed. Long-press/select the code below and copy it.";
+        status.className = "status bad";
+      }
+    });
+  </script>
+</body>
+</html>

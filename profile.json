@@ -1,0 +1,53 @@
+{
+  "___instructions___": "Replace all the placeholder values below with YOUR real details. Save the file. Then open generator.html in your browser and click 'Build Bookmarklet'. Leave a field empty (\"\") if you don't want it filled.",
+
+  "firstName": "Sharok",
+  "lastName": "N",
+  "fullName": "Sharok N",
+  "email": "sharukhahamed23@gmail.com",
+  "phone": "+917904649623",
+  "altPhone": "",
+  "linkedin": "https://www.linkedin.com/in/sharok-n-92b31b21b/",
+  "github": "https://github.com/sharok23",
+  "portfolio": "https://sharok23.github.io/Portfolio/",
+
+  "currentLocation": "Idukki, kerala, India",
+  "fullAddress": "Inshaf Manzil Valiyakandam",
+  "city": "Idukki",
+  "state": "Kerala",
+  "zip": "685509",
+  "country": "India",
+  "nationality": "Indian",
+
+  "currentJobTitle": "Software Engineer 1",
+  "currentCompany": "Edstem Technologies",
+  "totalExperience": "3.5",
+  "experienceYears": "3.5",
+  "currentSalary": "400000",
+  "expectedSalary": "1000000",
+  "noticePeriod": "15 days",
+  "availability": "Immediately",
+  "willingToRelocate": "Yes",
+
+  "highestQualification": "Bachelor of Technology",
+  "fieldOfStudy": "Computer Science",
+  "university": "Ilahia College of Engineering and Technology",
+  "graduationYear": "2021",
+
+  "skills": "Java, Spring Boot, PostgreSQL, Kafka, Docker, REST APIs, AWS S3, OpenSearch, DynamoDB, Maven, Git, JUnit, Mockito",
+  "languages": "English, Tamil, Malayalam",
+  "resumeUrl": "https://drive.google.com/file/d/1MnF02rdTdUMRNFdN4LwVlVBApvljbPwO/view?usp=drive_link",
+  "coverLetterUrl": "https://drive.google.com/file/d/19pE4uwIC9LneyUBCI5j0YkSdiuvWn26N/view?usp=drive_link",
+  "coverLetter": "I am writing to express my interest in the Software Engineer position at your organization. With over three years of experience in Java backend development and a strong foundation in cloud technologies, distributed systems, and AI-powered applications, I am excited about the opportunity to contribute to your team.\n\nCurrently, I work as a Software Engineer at Edstem Technologies, where I design and develop scalable backend systems using Java, Spring Boot, PostgreSQL, Kafka, Elasticsearch, AWS, and Docker. My experience includes building RESTful APIs, implementing event-driven architectures, optimizing application performance, and developing solutions that support large-scale business operations.\n\nOne of my key projects involved developing backend services for an AI-powered resume processing platform. I designed Kafka-based processing pipelines, implemented data validation and transformation workflows, integrated AI-driven resume parsing, and improved overall system throughput. Through this work, I gained practical experience in AI-powered systems, data processing, and scalable application design.\n\nI have also worked as a Technical Consultant for Elsevier's Person Hub project, where I developed enterprise-grade APIs managing millions of records, integrated external services, and delivered high-performance solutions while maintaining strict service-level requirements. Additionally, I contributed to building large-scale data export solutions on AWS, processing millions of records efficiently and reliably.\n\nAlongside my software engineering experience, I have developed strong knowledge of AI and Large Language Model (LLM) technologies. I hold certifications in Azure AI Fundamentals, Agentic AI, LangChain for LLM Application Development, and Claude Code. I am passionate about leveraging AI, automation, and modern software engineering practices to solve complex business problems and create impactful solutions.\n\nI am a quick learner, a collaborative team player, and someone who enjoys taking ownership of challenging technical problems. I am eager to contribute my skills, continue growing as an engineer, and help build innovative products that deliver value to users and businesses alike.\n\nThank you for your time and consideration. I look forward to the opportunity to discuss how my experience and technical skills can contribute to your organization.",
+  "roleExplanation": "As a Software Engineer with 3.5 years of experience, I developed and maintained enterprise-grade applications using Java, Spring Boot, and Microservices, ensuring high performance, scalability, and reliability. I designed and implemented RESTful APIs for seamless client-server communication and collaborated with cross-functional teams to deliver robust software solutions following industry best practices. I optimized database operations using Spring Data JPA, Hibernate, and PostgreSQL, improving application performance and data management. I wrote unit and integration tests using JUnit and Mockito to ensure code quality and application stability. Additionally, I worked with Apache Kafka to build event-driven applications and used Docker for containerized deployments, enabling consistent development and efficient application delivery. I actively participated in code reviews, bug fixing, and performance optimization to continuously improve application quality.",
+
+  "whyThisRole": "I am passionate about this role because it aligns with my skills and career goals.",
+  "whyThisCompany": "I admire your company's mission and innovative work in the industry.",
+  "strengths": "Problem-solving, quick learning, teamwork, and strong communication.",
+  "achievements": "Led a team to deliver a critical project ahead of schedule.",
+
+  "gender": "Male",
+  "dateOfBirth": "1999-02-23",
+  "visaStatus": "Authorized to work",
+  "source": "LinkedIn"
+}
