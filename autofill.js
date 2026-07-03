@@ -1,3 +1,13 @@
+// ==UserScript==
+// @name         Job Autofill - Sharok
+// @namespace    job-autofill
+// @version      1.1.0
+// @description  Autofill common job application fields, including native and custom dropdowns.
+// @match        *://*/*
+// @grant        none
+// @run-at       document-idle
+// ==/UserScript==
+
 (() => {
   const profile = {
     firstName: "Sharok",
@@ -109,6 +119,8 @@
     }
   };
 
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
   const setNativeValue = (element, value) => {
     const prototype = element instanceof HTMLTextAreaElement
       ? HTMLTextAreaElement.prototype
@@ -126,6 +138,8 @@
       element.name,
       element.id,
       element.placeholder,
+      element.title,
+      element.innerText,
       element.getAttribute("aria-label"),
       element.getAttribute("data-test"),
       element.getAttribute("data-testid")
@@ -191,11 +205,68 @@
     return true;
   };
 
+  const visibleText = element => norm(element?.innerText || element?.textContent || element?.getAttribute?.("aria-label"));
+
+  const optionMatches = (option, wanted) => {
+    const optionText = visibleText(option);
+    const normalizedWanted = norm(wanted);
+    if (!optionText || !normalizedWanted) return false;
+    return optionText === normalizedWanted ||
+      optionText.includes(normalizedWanted) ||
+      normalizedWanted.includes(optionText);
+  };
+
+  const findOpenOption = wanted => {
+    const selectors = [
+      "[role='option']",
+      "[role='menuitemradio']",
+      "[role='menuitemcheckbox']",
+      "li",
+      "[data-test*='option']",
+      "[data-testid*='option']"
+    ];
+
+    return Array.from(document.querySelectorAll(selectors.join(","))).find(option => {
+      const rect = option.getBoundingClientRect();
+      const hidden = rect.width === 0 || rect.height === 0 ||
+        getComputedStyle(option).visibility === "hidden" ||
+        getComputedStyle(option).display === "none";
+      return !hidden && optionMatches(option, wanted);
+    });
+  };
+
+  const setCustomDropdown = async element => {
+    const wanted = valueFor(textFor(element));
+    if (!wanted || element.disabled || element.getAttribute("aria-disabled") === "true") return false;
+
+    element.focus();
+    element.click();
+    trigger(element);
+    await sleep(250);
+
+    const option = findOpenOption(wanted);
+    if (!option) {
+      element.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      return false;
+    }
+
+    option.focus();
+    option.click();
+    trigger(option);
+    trigger(element);
+    return true;
+  };
+
   const setChoice = element => {
     if (element.disabled) return false;
     const wanted = valueFor(textFor(element));
     const optionText = norm([element.value, element.closest("label")?.innerText].filter(Boolean).join(" "));
     if (!wanted || !optionText) return false;
+    if (element.type === "checkbox" && ["yes", "true", "y"].includes(norm(wanted))) {
+      element.checked = true;
+      trigger(element);
+      return true;
+    }
     if (!optionText.includes(norm(wanted)) && !norm(wanted).includes(optionText)) return false;
     element.checked = true;
     trigger(element);
@@ -211,23 +282,42 @@
     return true;
   };
 
-  let count = 0;
+  const run = async () => {
+    let count = 0;
 
-  document.querySelectorAll("input, textarea").forEach(element => {
-    if (element.type === "radio" || element.type === "checkbox") {
-      if (setChoice(element)) count += 1;
-      return;
+    document.querySelectorAll("input, textarea").forEach(element => {
+      if (element.type === "radio" || element.type === "checkbox") {
+        if (setChoice(element)) count += 1;
+        return;
+      }
+      if (setTextField(element)) count += 1;
+    });
+
+    document.querySelectorAll("select").forEach(element => {
+      if (setSelect(element)) count += 1;
+    });
+
+    document.querySelectorAll("[contenteditable='true']").forEach(element => {
+      if (setEditable(element)) count += 1;
+    });
+
+    const customDropdowns = Array.from(document.querySelectorAll([
+      "[role='combobox']",
+      "[aria-haspopup='listbox']",
+      "[aria-haspopup='menu']",
+      "button[aria-expanded]",
+      "div[aria-expanded]"
+    ].join(","))).filter(element => {
+      const tag = element.tagName.toLowerCase();
+      return tag !== "select" && element.offsetParent !== null;
+    });
+
+    for (const element of customDropdowns) {
+      if (await setCustomDropdown(element)) count += 1;
     }
-    if (setTextField(element)) count += 1;
-  });
 
-  document.querySelectorAll("select").forEach(element => {
-    if (setSelect(element)) count += 1;
-  });
+    alert(`Job Autofill filled ${count} field${count === 1 ? "" : "s"}. Please review before submitting.`);
+  };
 
-  document.querySelectorAll("[contenteditable='true']").forEach(element => {
-    if (setEditable(element)) count += 1;
-  });
-
-  alert(`Job Autofill filled ${count} field${count === 1 ? "" : "s"}.`);
+  run();
 })();
